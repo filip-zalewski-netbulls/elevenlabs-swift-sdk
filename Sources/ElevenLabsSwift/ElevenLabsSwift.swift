@@ -626,7 +626,7 @@ public class ElevenLabsSDK {
         public var onStatusChange: @Sendable (Status) -> Void = { _ in }
         public var onModeChange: @Sendable (Mode) -> Void = { _ in }
         public var onVolumeUpdate: @Sendable (Float) -> Void = { _ in }
-
+        public var onMcpToolCall: ((String, String, String, [String: Any]) -> Void)? = nil
         public init() {}
     }
 
@@ -860,6 +860,17 @@ public class ElevenLabsSDK {
 
                 case "internal_turn_probability":
                     break
+
+                case "mcp_tool_call":
+                    if let mcp = json["mcp_tool_call"] as? [String: Any],
+                       let serviceId = mcp["service_id"] as? String,
+                       let toolCallId = mcp["tool_call_id"] as? String,
+                       let toolName = mcp["tool_name"] as? String,
+                       let parameters = mcp["parameters"] as? [String: Any] {
+                        callbacks.onMcpToolCall?(serviceId, toolCallId, toolName, parameters)
+                    } else {
+                        callbacks.onError("Invalid mcp_tool_call format", json)
+                    }
 
                 default:
                     callbacks.onError("Unknown message type", json)
