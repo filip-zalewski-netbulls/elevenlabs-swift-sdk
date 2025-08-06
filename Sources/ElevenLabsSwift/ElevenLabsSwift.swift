@@ -626,7 +626,7 @@ public class ElevenLabsSDK {
         public var onStatusChange: @Sendable (Status) -> Void = { _ in }
         public var onModeChange: @Sendable (Mode) -> Void = { _ in }
         public var onVolumeUpdate: @Sendable (Float) -> Void = { _ in }
-
+        public var onMcpToolCall: @Sendable (String, String, String, [String: Any], [Any], String, String) -> Void = { _, _, _, _, _, _, _ in }
         public init() {}
     }
 
@@ -821,6 +821,25 @@ public class ElevenLabsSDK {
             }
         }
 
+private func handleMcpToolCall(_ json: [String: Any]) {
+    guard let mcpToolCall = json["mcp_tool_call"] as? [String: Any],
+          let toolName = mcpToolCall["tool_name"] as? String,
+          let toolCallId = mcpToolCall["tool_call_id"] as? String,
+          let serviceId = mcpToolCall["service_id"] as? String
+    else {
+        callbacks.onError("Invalid MCP tool call format", json)
+        return
+    }
+
+    let parameters = mcpToolCall["parameters"] as? [String: Any] ?? [:]
+    let result = mcpToolCall["result"] as? [Any] ?? []
+    let timestamp = mcpToolCall["timestamp"] as? String ?? ""
+    let state = mcpToolCall["state"] as? String ?? ""
+
+    callbacks.onMcpToolCall(toolName, toolCallId, serviceId, parameters, result, timestamp, state)
+}
+
+
         private func handleWebSocketMessage(_ message: URLSessionWebSocketTask.Message) {
             switch message {
             case let .string(text):
@@ -860,7 +879,8 @@ public class ElevenLabsSDK {
 
                 case "internal_turn_probability":
                     break
-
+case "mcp_tool_call":
+    handleMcpToolCall(json)
                 default:
                     callbacks.onError("Unknown message type", json)
                 }
