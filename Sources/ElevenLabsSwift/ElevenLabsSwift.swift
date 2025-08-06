@@ -19,15 +19,16 @@ public class ElevenLabsSDK {
         static let bufferSize: AVAudioFrameCount = 1024
 
         // WebSocket message size limits
-        static let maxWebSocketMessageSize = 1024 * 1024 // 1MB WebSocket limit
-        static let safeMessageSize = 750 * 1024 // 750KB - safely under the limit
-        static let maxRequestedMessageSize = 8 * 1024 * 1024 // 8MB - request larger buffer if available
+        static let maxWebSocketMessageSize = 1024 * 1024  // 1MB WebSocket limit
+        static let safeMessageSize = 750 * 1024  // 750KB - safely under the limit
+        static let maxRequestedMessageSize = 8 * 1024 * 1024  // 8MB - request larger buffer if available
     }
 
     // MARK: - Session Config Utilities
 
     public enum Language: String, Codable, Sendable {
-        case en, ja, zh, de, hi, fr, ko, pt, it, es, id, nl, tr, pl, sv, bg, ro, ar, cs, el, fi, ms, da, ta, uk, ru, hu, no, vi
+        case en, ja, zh, de, hi, fr, ko, pt, it, es, id, nl, tr, pl, sv, bg, ro, ar, cs, el, fi, ms,
+            da, ta, uk, ru, hu, no, vi
     }
 
     public struct AgentPrompt: Codable, Sendable {
@@ -71,7 +72,9 @@ public class ElevenLabsSDK {
             case language
         }
 
-        public init(prompt: AgentPrompt? = nil, firstMessage: String? = nil, language: Language? = nil) {
+        public init(
+            prompt: AgentPrompt? = nil, firstMessage: String? = nil, language: Language? = nil
+        ) {
             self.prompt = prompt
             self.firstMessage = firstMessage
             self.language = language
@@ -116,11 +119,13 @@ public class ElevenLabsSDK {
 
     public struct ClientTools: Sendable {
         private var tools: [String: ClientToolHandler] = [:]
-        private let lock = NSLock() // Ensure thread safety
+        private let lock = NSLock()  // Ensure thread safety
 
         public init() {}
 
-        public mutating func register(_ name: String, handler: @escaping @Sendable ClientToolHandler) {
+        public mutating func register(
+            _ name: String, handler: @escaping @Sendable ClientToolHandler
+        ) {
             lock.withLock {
                 tools[name] = handler
             }
@@ -171,12 +176,16 @@ public class ElevenLabsSDK {
                     let remainingSamples = currentBuffer.count / 2 - cursor
                     let samplesToWrite = min(remainingSamples, outputBuffer.count - outputIndex)
 
-                    guard let int16ChannelData = currentBuffer.withUnsafeBytes({ $0.bindMemory(to: Int16.self).baseAddress }) else {
+                    guard
+                        let int16ChannelData = currentBuffer.withUnsafeBytes({
+                            $0.bindMemory(to: Int16.self).baseAddress
+                        })
+                    else {
                         print("Failed to access Int16 channel data.")
                         break
                     }
 
-                    for sampleIndex in 0 ..< samplesToWrite {
+                    for sampleIndex in 0..<samplesToWrite {
                         let sample = int16ChannelData[cursor + sampleIndex]
                         outputBuffer[outputIndex] = Float(sample) / 32768.0
                         outputIndex += 1
@@ -234,7 +243,7 @@ public class ElevenLabsSDK {
             // iPhone 13 Series
             .iPhone13, .iPhone13Mini, .iPhone13Pro, .iPhone13ProMax,
             // iPhone SE Series (relevant generations)
-            .iPhoneSE2, .iPhoneSE3, // Assuming SE 2/3 fall under 'older'
+            .iPhoneSE2, .iPhoneSE3,  // Assuming SE 2/3 fall under 'older'
             // iPhone 12 Series
             .iPhone12, .iPhone12Mini, .iPhone12Pro, .iPhone12ProMax,
             // iPhone 11 Series
@@ -251,12 +260,16 @@ public class ElevenLabsSDK {
         ]
 
         if currentDevice.isPhone && olderModels.contains(currentDevice) {
-            logger.debug("DeviceKit check: Detected older iPhone model (\(currentDevice.description)). Applying workaround.")
+            logger.debug(
+                "DeviceKit check: Detected older iPhone model (\(currentDevice.description)). Applying workaround."
+            )
             return true
         }
 
         // Covers iPhone 14 series and newer, iPads, iPods, Simulators, unknown devices.
-        logger.debug("DeviceKit check: Detected newer iPhone model (\(currentDevice.description)) or non-applicable device. No workaround needed.")
+        logger.debug(
+            "DeviceKit check: Detected newer iPhone model (\(currentDevice.description)) or non-applicable device. No workaround needed."
+        )
         return false
     }
 
@@ -285,7 +298,12 @@ public class ElevenLabsSDK {
         public let customLlmExtraBody: [String: LlmExtraBodyValue]?
         public let dynamicVariables: [String: DynamicVariableValue]?
 
-        public init(signedUrl: String, overrides: ConversationConfigOverride? = nil, customLlmExtraBody: [String: LlmExtraBodyValue]? = nil, clientTools _: ClientTools = ClientTools(), dynamicVariables: [String: DynamicVariableValue]? = nil) {
+        public init(
+            signedUrl: String, overrides: ConversationConfigOverride? = nil,
+            customLlmExtraBody: [String: LlmExtraBodyValue]? = nil,
+            clientTools _: ClientTools = ClientTools(),
+            dynamicVariables: [String: DynamicVariableValue]? = nil
+        ) {
             self.signedUrl = signedUrl
             agentId = nil
             self.overrides = overrides
@@ -293,7 +311,12 @@ public class ElevenLabsSDK {
             self.dynamicVariables = dynamicVariables
         }
 
-        public init(agentId: String, overrides: ConversationConfigOverride? = nil, customLlmExtraBody: [String: LlmExtraBodyValue]? = nil, clientTools _: ClientTools = ClientTools(), dynamicVariables: [String: DynamicVariableValue]? = nil) {
+        public init(
+            agentId: String, overrides: ConversationConfigOverride? = nil,
+            customLlmExtraBody: [String: LlmExtraBodyValue]? = nil,
+            clientTools _: ClientTools = ClientTools(),
+            dynamicVariables: [String: DynamicVariableValue]? = nil
+        ) {
             self.agentId = agentId
             signedUrl = nil
             self.overrides = overrides
@@ -314,8 +337,12 @@ public class ElevenLabsSDK {
         }
 
         public static func create(config: SessionConfig) async throws -> Connection {
-            let origin = ProcessInfo.processInfo.environment["ELEVENLABS_CONVAI_SERVER_ORIGIN"] ?? Constants.defaultApiOrigin
-            let pathname = ProcessInfo.processInfo.environment["ELEVENLABS_CONVAI_SERVER_PATHNAME"] ?? Constants.defaultApiPathname
+            let origin =
+                ProcessInfo.processInfo.environment["ELEVENLABS_CONVAI_SERVER_ORIGIN"]
+                ?? Constants.defaultApiOrigin
+            let pathname =
+                ProcessInfo.processInfo.environment["ELEVENLABS_CONVAI_SERVER_PATHNAME"]
+                ?? Constants.defaultApiPathname
 
             let urlString: String
             if let signedUrl = config.signedUrl {
@@ -339,7 +366,7 @@ public class ElevenLabsSDK {
 
             // Add overrides if present
             if let overrides = config.overrides,
-               let overridesDict = overrides.dictionary
+                let overridesDict = overrides.dictionary
             {
                 initEvent["conversation_config_override"] = overridesDict
             }
@@ -359,7 +386,9 @@ public class ElevenLabsSDK {
             try await socket.send(.string(jsonString))
 
             let configData = try await receiveInitialMessage(socket: socket)
-            return Connection(socket: socket, conversationId: configData.conversationId, sampleRate: configData.sampleRate)
+            return Connection(
+                socket: socket, conversationId: configData.conversationId,
+                sampleRate: configData.sampleRate)
         }
 
         private static func receiveInitialMessage(
@@ -372,19 +401,24 @@ public class ElevenLabsSDK {
                         switch message {
                         case let .string(text):
                             guard let data = text.data(using: .utf8),
-                                  let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-                                  let type = json["type"] as? String,
-                                  type == "conversation_initiation_metadata",
-                                  let metadata = json["conversation_initiation_metadata_event"] as? [String: Any],
-                                  let conversationId = metadata["conversation_id"] as? String,
-                                  let audioFormat = metadata["agent_output_audio_format"] as? String
+                                let json = try? JSONSerialization.jsonObject(
+                                    with: data, options: []) as? [String: Any],
+                                let type = json["type"] as? String,
+                                type == "conversation_initiation_metadata",
+                                let metadata = json["conversation_initiation_metadata_event"]
+                                    as? [String: Any],
+                                let conversationId = metadata["conversation_id"] as? String,
+                                let audioFormat = metadata["agent_output_audio_format"] as? String
                             else {
-                                continuation.resume(throwing: ElevenLabsError.invalidInitialMessageFormat)
+                                continuation.resume(
+                                    throwing: ElevenLabsError.invalidInitialMessageFormat)
                                 return
                             }
 
-                            let sampleRate = Int(audioFormat.replacingOccurrences(of: "pcm_", with: "")) ?? 16000
-                            continuation.resume(returning: (conversationId: conversationId, sampleRate: sampleRate))
+                            let sampleRate =
+                                Int(audioFormat.replacingOccurrences(of: "pcm_", with: "")) ?? 16000
+                            continuation.resume(
+                                returning: (conversationId: conversationId, sampleRate: sampleRate))
 
                         case .data:
                             continuation.resume(throwing: ElevenLabsError.unexpectedBinaryMessage)
@@ -422,7 +456,7 @@ public class ElevenLabsSDK {
             // Define the Audio Component
             var audioComponentDesc = AudioComponentDescription(
                 componentType: kAudioUnitType_Output,
-                componentSubType: kAudioUnitSubType_VoiceProcessingIO, // For echo cancellation
+                componentSubType: kAudioUnitSubType_VoiceProcessingIO,  // For echo cancellation
                 componentManufacturer: kAudioUnitManufacturer_Apple,
                 componentFlags: 0,
                 componentFlagsMask: 0
@@ -443,21 +477,23 @@ public class ElevenLabsSDK {
 
             // Enable IO for recording
             var enableIO: UInt32 = 1
-            AudioUnitSetProperty(audioUnit,
-                                 kAudioOutputUnitProperty_EnableIO,
-                                 kAudioUnitScope_Input,
-                                 1,
-                                 &enableIO,
-                                 UInt32(MemoryLayout.size(ofValue: enableIO)))
+            AudioUnitSetProperty(
+                audioUnit,
+                kAudioOutputUnitProperty_EnableIO,
+                kAudioUnitScope_Input,
+                1,
+                &enableIO,
+                UInt32(MemoryLayout.size(ofValue: enableIO)))
 
             // Disable output
             var disableIO: UInt32 = 0
-            AudioUnitSetProperty(audioUnit,
-                                 kAudioOutputUnitProperty_EnableIO,
-                                 kAudioUnitScope_Output,
-                                 0,
-                                 &disableIO,
-                                 UInt32(MemoryLayout.size(ofValue: disableIO)))
+            AudioUnitSetProperty(
+                audioUnit,
+                kAudioOutputUnitProperty_EnableIO,
+                kAudioUnitScope_Output,
+                0,
+                &disableIO,
+                UInt32(MemoryLayout.size(ofValue: disableIO)))
 
             // Set the audio format
             var audioFormat = AudioStreamBasicDescription(
@@ -472,12 +508,13 @@ public class ElevenLabsSDK {
                 mReserved: 0
             )
 
-            AudioUnitSetProperty(audioUnit,
-                                 kAudioUnitProperty_StreamFormat,
-                                 kAudioUnitScope_Output,
-                                 1, // Bus 1 (Output scope of input element)
-                                 &audioFormat,
-                                 UInt32(MemoryLayout<AudioStreamBasicDescription>.size))
+            AudioUnitSetProperty(
+                audioUnit,
+                kAudioUnitProperty_StreamFormat,
+                kAudioUnitScope_Output,
+                1,  // Bus 1 (Output scope of input element)
+                &audioFormat,
+                UInt32(MemoryLayout<AudioStreamBasicDescription>.size))
 
             input.audioFormat = audioFormat
 
@@ -486,12 +523,13 @@ public class ElevenLabsSDK {
                 inputProc: inputRenderCallback,
                 inputProcRefCon: UnsafeMutableRawPointer(Unmanaged.passUnretained(input).toOpaque())
             )
-            AudioUnitSetProperty(audioUnit,
-                                 kAudioOutputUnitProperty_SetInputCallback,
-                                 kAudioUnitScope_Global,
-                                 1, // Bus 1
-                                 &inputCallbackStruct,
-                                 UInt32(MemoryLayout<AURenderCallbackStruct>.size))
+            AudioUnitSetProperty(
+                audioUnit,
+                kAudioOutputUnitProperty_SetInputCallback,
+                kAudioUnitScope_Global,
+                1,  // Bus 1
+                &inputCallbackStruct,
+                UInt32(MemoryLayout<AURenderCallbackStruct>.size))
 
             // Initialize and start the audio unit
             AudioUnitInitialize(audioUnit)
@@ -512,17 +550,18 @@ public class ElevenLabsSDK {
 
         private static let inputRenderCallback: AURenderCallback = {
             inRefCon,
-                ioActionFlags,
-                inTimeStamp,
-                _,
-                inNumberFrames,
-                _
+            ioActionFlags,
+            inTimeStamp,
+            _,
+            inNumberFrames,
+            _
                 -> OSStatus in
             let input = Unmanaged<Input>.fromOpaque(inRefCon).takeUnretainedValue()
             let audioUnit = input.audioUnit
 
             let byteSize = Int(inNumberFrames) * MemoryLayout<Int16>.size
-            let data = UnsafeMutableRawPointer.allocate(byteCount: byteSize, alignment: MemoryLayout<Int16>.alignment)
+            let data = UnsafeMutableRawPointer.allocate(
+                byteCount: byteSize, alignment: MemoryLayout<Int16>.alignment)
             var audioBuffer = AudioBuffer(
                 mNumberChannels: 1,
                 mDataByteSize: UInt32(byteSize),
@@ -533,28 +572,33 @@ public class ElevenLabsSDK {
                 mBuffers: audioBuffer
             )
 
-            let status = AudioUnitRender(audioUnit,
-                                         ioActionFlags,
-                                         inTimeStamp,
-                                         1, // inBusNumber
-                                         inNumberFrames,
-                                         &bufferList)
+            let status = AudioUnitRender(
+                audioUnit,
+                ioActionFlags,
+                inTimeStamp,
+                1,  // inBusNumber
+                inNumberFrames,
+                &bufferList)
 
             if status == noErr {
                 let frameCount = Int(inNumberFrames)
-                guard let audioFormat = AVAudioFormat(
-                    commonFormat: .pcmFormatInt16,
-                    sampleRate: input.audioFormat.mSampleRate,
-                    channels: 1,
-                    interleaved: true
-                ) else {
+                guard
+                    let audioFormat = AVAudioFormat(
+                        commonFormat: .pcmFormatInt16,
+                        sampleRate: input.audioFormat.mSampleRate,
+                        channels: 1,
+                        interleaved: true
+                    )
+                else {
                     data.deallocate()
                     return noErr
                 }
-                guard let pcmBuffer = AVAudioPCMBuffer(
-                    pcmFormat: audioFormat,
-                    frameCapacity: AVAudioFrameCount(frameCount)
-                ) else {
+                guard
+                    let pcmBuffer = AVAudioPCMBuffer(
+                        pcmFormat: audioFormat,
+                        frameCapacity: AVAudioFrameCount(frameCount)
+                    )
+                else {
                     data.deallocate()
                     return noErr
                 }
@@ -566,7 +610,7 @@ public class ElevenLabsSDK {
 
                 // Compute RMS value for volume level
                 var rms: Float = 0.0
-                for i in 0 ..< frameCount {
+                for i in 0..<frameCount {
                     let sample = Float(dataPointer[i]) / Float(Int16.max)
                     rms += sample * sample
                 }
@@ -590,7 +634,10 @@ public class ElevenLabsSDK {
         let audioQueue: DispatchQueue
         let audioFormat: AVAudioFormat
 
-        private init(engine: AVAudioEngine, playerNode: AVAudioPlayerNode, mixer: AVAudioMixerNode, audioFormat: AVAudioFormat) {
+        private init(
+            engine: AVAudioEngine, playerNode: AVAudioPlayerNode, mixer: AVAudioMixerNode,
+            audioFormat: AVAudioFormat
+        ) {
             self.engine = engine
             self.playerNode = playerNode
             self.mixer = mixer
@@ -612,7 +659,11 @@ public class ElevenLabsSDK {
             engine.attach(playerNode)
             engine.attach(mixer)
 
-            guard let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: sampleRate, channels: 1, interleaved: false) else {
+            guard
+                let format = AVAudioFormat(
+                    commonFormat: .pcmFormatFloat32, sampleRate: sampleRate, channels: 1,
+                    interleaved: false)
+            else {
                 throw ElevenLabsError.failedToCreateAudioFormat
             }
             engine.connect(playerNode, to: mixer, format: format)
@@ -677,7 +728,10 @@ public class ElevenLabsSDK {
         ///   - corrected: The corrected message. (Type: `String`)
         ///   - role: The role associated with the correction. (Type: `Role`)
         public var onMessageCorrection: @Sendable (String, String, Role) -> Void = { _, _, _ in }
-
+        public var onMcpToolCall:
+            @Sendable (String, String, String, [String: Any], [Any], String, String) -> Void = {
+                _, _, _, _, _, _, _ in
+            }
         public init() {}
     }
 
@@ -695,7 +749,7 @@ public class ElevenLabsSDK {
         private let isProcessingInputLock = NSLock()
 
         private var inputVolumeUpdateTimer: Timer?
-        private let inputVolumeUpdateInterval: TimeInterval = 0.1 // Update every 100ms
+        private let inputVolumeUpdateInterval: TimeInterval = 0.1  // Update every 100ms
         private var currentInputVolume: Float = 0.0
 
         private var _mode: Mode = .listening
@@ -738,11 +792,14 @@ public class ElevenLabsSDK {
         private let audioConcatProcessor = ElevenLabsSDK.AudioConcatProcessor()
         private var outputBuffers: [[Float]] = [[]]
 
-        private let logger = Logger(subsystem: "com.elevenlabs.ElevenLabsSDK", category: "Conversation")
+        private let logger = Logger(
+            subsystem: "com.elevenlabs.ElevenLabsSDK", category: "Conversation")
 
         private func setupInputVolumeMonitoring() {
             DispatchQueue.main.async {
-                self.inputVolumeUpdateTimer = Timer.scheduledTimer(withTimeInterval: self.inputVolumeUpdateInterval, repeats: true) { [weak self] _ in
+                self.inputVolumeUpdateTimer = Timer.scheduledTimer(
+                    withTimeInterval: self.inputVolumeUpdateInterval, repeats: true
+                ) { [weak self] _ in
                     guard let self = self else { return }
                     self.callbacks.onVolumeUpdate(self.currentInputVolume)
                 }
@@ -756,17 +813,17 @@ public class ElevenLabsSDK {
 
             var sumOfSquares: Float = 0
             let channelCount = Int(buffer.format.channelCount)
-            let frameLength = Int(buffer.frameLength) // Convert to Int
+            let frameLength = Int(buffer.frameLength)  // Convert to Int
 
-            for channel in 0 ..< channelCount {
+            for channel in 0..<channelCount {
                 let data = channelData[channel]
-                for i in 0 ..< frameLength {
+                for i in 0..<frameLength {
                     sumOfSquares += data[i] * data[i]
                 }
             }
 
             let rms = sqrt(sumOfSquares / Float(frameLength * channelCount))
-            let meterLevel = rms > 0 ? 20 * log10(rms) : -50.0 // Safeguarded
+            let meterLevel = rms > 0 ? 20 * log10(rms) : -50.0  // Safeguarded
 
             // Normalize the meter level to a 0-1 range
             let normalizedLevel = max(0, min(1, (meterLevel + 50) / 50))
@@ -777,7 +834,10 @@ public class ElevenLabsSDK {
             }
         }
 
-        private init(connection: Connection, input: Input, output: Output, callbacks: Callbacks, clientTools: ClientTools?) {
+        private init(
+            connection: Connection, input: Input, output: Output, callbacks: Callbacks,
+            clientTools: ClientTools?
+        ) {
             self.connection = connection
             self.input = input
             self.output = output
@@ -793,14 +853,17 @@ public class ElevenLabsSDK {
             }
 
             /// Installs a tap on the output to calculate and report the RMS audio level
-            let intervalFrames = AVAudioFrameCount(Double(connection.sampleRate) * Constants.volumeUpdateInterval)
-            output.mixer.installTap(onBus: 0, bufferSize: intervalFrames, format: output.audioFormat) { buffer, _ in
+            let intervalFrames = AVAudioFrameCount(
+                Double(connection.sampleRate) * Constants.volumeUpdateInterval)
+            output.mixer.installTap(
+                onBus: 0, bufferSize: intervalFrames, format: output.audioFormat
+            ) { buffer, _ in
                 guard let floatChan = buffer.floatChannelData?[0] else { return }
                 let frameCount = Int(buffer.frameLength)
 
                 // simple RMS
                 var sumSq: Float = 0
-                for i in 0 ..< frameCount {
+                for i in 0..<frameCount {
                     let s = floatChan[i]
                     sumSq += s * s
                 }
@@ -822,7 +885,10 @@ public class ElevenLabsSDK {
         ///   - callbacks: Callbacks for conversation events
         ///   - clientTools: Client tools callbacks (optional)
         /// - Returns: A started `Conversation` instance
-        public static func startSession(config: SessionConfig, callbacks: Callbacks = Callbacks(), clientTools: ClientTools? = nil) async throws -> Conversation {
+        public static func startSession(
+            config: SessionConfig, callbacks: Callbacks = Callbacks(),
+            clientTools: ClientTools? = nil
+        ) async throws -> Conversation {
             // Step 1: Configure the audio session
             try ElevenLabsSDK.configureAudioSession()
 
@@ -836,22 +902,27 @@ public class ElevenLabsSDK {
             let output = try await Output.create(sampleRate: Double(connection.sampleRate))
 
             // Step 5: Initialize the Conversation
-            let conversation = Conversation(connection: connection, input: input, output: output, callbacks: callbacks, clientTools: clientTools)
+            let conversation = Conversation(
+                connection: connection, input: input, output: output, callbacks: callbacks,
+                clientTools: clientTools)
 
             // Step 6: Start playing audio (implicitly activates session and engine)
             try output.startPlaying()
             conversation.logger.info("Audio engine started.")
 
             // Step 6.5: Apply speaker output override for older devices
-            if isOlderDeviceModel_DeviceKit() { // Use the new DeviceKit-based check
+            if isOlderDeviceModel_DeviceKit() {  // Use the new DeviceKit-based check
                 conversation.logger.info("Applying speaker override for older device model.")
                 // Dispatch after a short delay to ensure session/engine are fully ready
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { // 0.5s delay, adjust if needed
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {  // 0.5s delay, adjust if needed
                     do {
                         try AVAudioSession.sharedInstance().overrideOutputAudioPort(.speaker)
-                        conversation.logger.info("Successfully overridden output audio port to speaker.")
+                        conversation.logger.info(
+                            "Successfully overridden output audio port to speaker.")
                     } catch {
-                        conversation.logger.error("Failed to override output audio port to speaker: \(error.localizedDescription)")
+                        conversation.logger.error(
+                            "Failed to override output audio port to speaker: \(error.localizedDescription)"
+                        )
                         // Optionally trigger onError callback
                         // conversation.callbacks.onError("Failed to set speaker output", error)
                     }
@@ -913,8 +984,9 @@ public class ElevenLabsSDK {
             switch message {
             case let .string(text):
                 guard let data = text.data(using: .utf8),
-                      let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-                      let type = json["type"] as? String
+                    let json = try? JSONSerialization.jsonObject(with: data, options: [])
+                        as? [String: Any],
+                    let type = json["type"] as? String
                 else {
                     callbacks.onError("Invalid message format", nil)
                     return
@@ -951,6 +1023,8 @@ public class ElevenLabsSDK {
                 case "internal_turn_probability":
                     break
 
+                case "mcp_tool_call":
+                    handleMcpToolCall(json)
                 default:
                     callbacks.onError("Unknown message type", json)
                 }
@@ -963,11 +1037,30 @@ public class ElevenLabsSDK {
             }
         }
 
+        private func handleMcpToolCall(_ json: [String: Any]) {
+            guard let mcpToolCall = json["mcp_tool_call"] as? [String: Any],
+                let toolName = mcpToolCall["tool_name"] as? String,
+                let toolCallId = mcpToolCall["tool_call_id"] as? String,
+                let serviceId = mcpToolCall["service_id"] as? String
+            else {
+                callbacks.onError("Invalid MCP tool call format", json)
+                return
+            }
+
+            let parameters = mcpToolCall["parameters"] as? [String: Any] ?? [:]
+            let result = mcpToolCall["result"] as? [Any] ?? []
+            let timestamp = mcpToolCall["timestamp"] as? String ?? ""
+            let state = mcpToolCall["state"] as? String ?? ""
+
+            callbacks.onMcpToolCall(
+                toolName, toolCallId, serviceId, parameters, result, timestamp, state)
+        }
+
         private func handleClientToolCall(_ json: [String: Any]) {
             guard let toolCall = json["client_tool_call"] as? [String: Any],
-                  let toolName = toolCall["tool_name"] as? String,
-                  let toolCallId = toolCall["tool_call_id"] as? String,
-                  let parameters = toolCall["parameters"] as? [String: Any]
+                let toolName = toolCall["tool_name"] as? String,
+                let toolCallId = toolCall["tool_call_id"] as? String,
+                let parameters = toolCall["parameters"] as? [String: Any]
             else {
                 callbacks.onError("Invalid client tool call format", json)
                 return
@@ -976,7 +1069,8 @@ public class ElevenLabsSDK {
             // Serialize parameters to JSON Data for thread-safety
             let serializedParameters: Data
             do {
-                serializedParameters = try JSONSerialization.data(withJSONObject: parameters, options: [])
+                serializedParameters = try JSONSerialization.data(
+                    withJSONObject: parameters, options: [])
             } catch {
                 callbacks.onError("Failed to serialize parameters", error)
                 return
@@ -986,9 +1080,12 @@ public class ElevenLabsSDK {
             Task { [toolName, toolCallId, serializedParameters] in
                 do {
                     // Deserialize within the Task to pass into clientTools.handle
-                    let deserializedParameters = try JSONSerialization.jsonObject(with: serializedParameters) as? [String: Any] ?? [:]
+                    let deserializedParameters =
+                        try JSONSerialization.jsonObject(with: serializedParameters)
+                        as? [String: Any] ?? [:]
 
-                    let result = try await clientTools?.handle(toolName, parameters: deserializedParameters)
+                    let result = try await clientTools?.handle(
+                        toolName, parameters: deserializedParameters)
 
                     let response: [String: Any] = [
                         "type": "client_tool_result",
@@ -1011,7 +1108,8 @@ public class ElevenLabsSDK {
 
         private func handleInterruptionEvent(_ json: [String: Any]) {
             guard let event = json["interruption_event"] as? [String: Any],
-                  let eventId = event["event_id"] as? Int else { return }
+                let eventId = event["event_id"] as? Int
+            else { return }
 
             lastInterruptTimestamp = eventId
             fadeOutAudio()
@@ -1023,28 +1121,32 @@ public class ElevenLabsSDK {
 
         private func handleAgentResponseEvent(_ json: [String: Any]) {
             guard let event = json["agent_response_event"] as? [String: Any],
-                  let response = event["agent_response"] as? String else { return }
+                let response = event["agent_response"] as? String
+            else { return }
             callbacks.onMessage(response, .ai)
         }
 
         private func handleAgentResponseCorrectionEvent(_ json: [String: Any]) {
             guard let event = json["agent_response_correction_event"] as? [String: Any],
-                  let original_response = event["original_agent_response"] as? String,
-                  let corrected_response = event["corrected_agent_response"] as? String else { return }
+                let original_response = event["original_agent_response"] as? String,
+                let corrected_response = event["corrected_agent_response"] as? String
+            else { return }
             callbacks.onMessageCorrection(original_response, corrected_response, .ai)
         }
 
         private func handleUserTranscriptEvent(_ json: [String: Any]) {
             guard let event = json["user_transcription_event"] as? [String: Any],
-                  let transcript = event["user_transcript"] as? String else { return }
+                let transcript = event["user_transcript"] as? String
+            else { return }
             callbacks.onMessage(transcript, .user)
         }
 
         private func handleAudioEvent(_ json: [String: Any]) {
             guard let event = json["audio_event"] as? [String: Any],
-                  let audioBase64 = event["audio_base_64"] as? String,
-                  let eventId = event["event_id"] as? Int,
-                  lastInterruptTimestamp <= eventId else { return }
+                let audioBase64 = event["audio_base_64"] as? String,
+                let eventId = event["event_id"] as? Int,
+                lastInterruptTimestamp <= eventId
+            else { return }
 
             // Check if we need to split the audio chunk for WebSocket size limits
             if audioBase64.utf8.count > Constants.maxWebSocketMessageSize {
@@ -1055,8 +1157,9 @@ public class ElevenLabsSDK {
                 while offset < audioBase64.count {
                     let endIndex = min(offset + chunkSize, audioBase64.count)
                     let startIndex = audioBase64.index(audioBase64.startIndex, offsetBy: offset)
-                    let endStringIndex = audioBase64.index(audioBase64.startIndex, offsetBy: endIndex)
-                    let subChunk = String(audioBase64[startIndex ..< endStringIndex])
+                    let endStringIndex = audioBase64.index(
+                        audioBase64.startIndex, offsetBy: endIndex)
+                    let subChunk = String(audioBase64[startIndex..<endStringIndex])
 
                     addAudioBase64Chunk(subChunk)
                     offset = endIndex
@@ -1071,14 +1174,15 @@ public class ElevenLabsSDK {
 
         private func handlePingEvent(_ json: [String: Any]) {
             guard let event = json["ping_event"] as? [String: Any],
-                  let eventId = event["event_id"] as? Int else { return }
+                let eventId = event["event_id"] as? Int
+            else { return }
             let response: [String: Any] = ["type": "pong", "event_id": eventId]
             sendWebSocketMessage(response)
         }
 
         private func sendWebSocketMessage(_ message: [String: Any]) {
             guard let data = try? JSONSerialization.data(withJSONObject: message),
-                  let string = String(data: data, encoding: .utf8)
+                let string = String(data: data, encoding: .utf8)
             else {
                 callbacks.onError("Failed to encode message", message)
                 return
@@ -1086,7 +1190,8 @@ public class ElevenLabsSDK {
 
             connection.socket.send(.string(string)) { [weak self] error in
                 if let error = error {
-                    self?.logger.error("Failed to send WebSocket message: \(error.localizedDescription)")
+                    self?.logger.error(
+                        "Failed to send WebSocket message: \(error.localizedDescription)")
                     self?.callbacks.onError("Failed to send WebSocket message", error)
                 }
             }
@@ -1105,7 +1210,9 @@ public class ElevenLabsSDK {
                     if totalBytes <= Constants.safeMessageSize {
                         let data = Data(bytes: int16ChannelData[0], count: totalBytes)
                         let base64String = data.base64EncodedString()
-                        let message: [String: Any] = ["type": "user_audio_chunk", "user_audio_chunk": base64String]
+                        let message: [String: Any] = [
+                            "type": "user_audio_chunk", "user_audio_chunk": base64String,
+                        ]
                         self.sendWebSocketMessage(message)
                     } else {
                         // Split into smaller chunks
@@ -1116,10 +1223,14 @@ public class ElevenLabsSDK {
                             let framesInChunk = min(framesPerChunk, frameLength - frameOffset)
                             let bytesInChunk = framesInChunk * MemoryLayout<Int16>.size
 
-                            let chunkData = Data(bytes: int16ChannelData[0].advanced(by: frameOffset), count: bytesInChunk)
+                            let chunkData = Data(
+                                bytes: int16ChannelData[0].advanced(by: frameOffset),
+                                count: bytesInChunk)
                             let base64String = chunkData.base64EncodedString()
 
-                            let message: [String: Any] = ["type": "user_audio_chunk", "user_audio_chunk": base64String]
+                            let message: [String: Any] = [
+                                "type": "user_audio_chunk", "user_audio_chunk": base64String,
+                            ]
                             self.sendWebSocketMessage(message)
 
                             frameOffset += framesInChunk
@@ -1145,9 +1256,9 @@ public class ElevenLabsSDK {
             var sum: Float = 0
             let channelCount = Int(buffer.format.channelCount)
 
-            for channel in 0 ..< channelCount {
+            for channel in 0..<channelCount {
                 let data = channelData[channel]
-                for i in 0 ..< Int(buffer.frameLength) {
+                for i in 0..<Int(buffer.frameLength) {
                     sum += abs(data[i])
                 }
             }
@@ -1166,12 +1277,14 @@ public class ElevenLabsSDK {
             }
 
             let sampleRate = Double(connection.sampleRate)
-            guard let audioFormat = AVAudioFormat(
-                commonFormat: .pcmFormatFloat32,
-                sampleRate: sampleRate,
-                channels: 1,
-                interleaved: false
-            ) else {
+            guard
+                let audioFormat = AVAudioFormat(
+                    commonFormat: .pcmFormatFloat32,
+                    sampleRate: sampleRate,
+                    channels: 1,
+                    interleaved: false
+                )
+            else {
                 callbacks.onError("Failed to create AVAudioFormat", nil)
                 return
             }
@@ -1179,7 +1292,10 @@ public class ElevenLabsSDK {
             let frameCount = data.count / MemoryLayout<Int16>.size
 
             if frameCount > 0 {
-                guard let audioBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat, frameCapacity: AVAudioFrameCount(frameCount)) else {
+                guard
+                    let audioBuffer = AVAudioPCMBuffer(
+                        pcmFormat: audioFormat, frameCapacity: AVAudioFrameCount(frameCount))
+                else {
                     callbacks.onError("Failed to create AVAudioPCMBuffer", nil)
                     return
                 }
@@ -1187,10 +1303,12 @@ public class ElevenLabsSDK {
                 audioBuffer.frameLength = AVAudioFrameCount(frameCount)
 
                 data.withUnsafeBytes { (int16Buffer: UnsafeRawBufferPointer) in
-                    guard let int16Pointer = int16Buffer.bindMemory(to: Int16.self).baseAddress else { return }
+                    guard let int16Pointer = int16Buffer.bindMemory(to: Int16.self).baseAddress
+                    else { return }
                     if let floatChannelData = audioBuffer.floatChannelData {
-                        for i in 0 ..< frameCount {
-                            floatChannelData[0][i] = Float(Int16(littleEndian: int16Pointer[i])) / Float(Int16.max)
+                        for i in 0..<frameCount {
+                            floatChannelData[0][i] =
+                                Float(Int16(littleEndian: int16Pointer[i])) / Float(Int16.max)
                         }
                     }
                 }
@@ -1266,7 +1384,7 @@ public class ElevenLabsSDK {
         // triggers a turn without requiring audio, audio still processed
         public func sendUserMessage(_ text: String? = nil) {
             var event: [String: Any] = [
-                "type": "user_message",
+                "type": "user_message"
             ]
             if let text = text {
                 event["text"] = text
@@ -1277,7 +1395,7 @@ public class ElevenLabsSDK {
         /// Send a user activity event , prevents interruption due to turn timeout
         public func sendUserActivity() {
             let event: [String: Any] = [
-                "type": "user_activity",
+                "type": "user_activity"
             ]
             sendWebSocketMessage(event)
         }
@@ -1386,7 +1504,8 @@ public class ElevenLabsSDK {
             // ALWAYS configure with .voiceChat initially. The override handles older devices later.
             let sessionMode: AVAudioSession.Mode = .voiceChat
             logger.info("Configuring session with category: .playAndRecord, mode: .voiceChat")
-            try audioSession.setCategory(.playAndRecord, mode: sessionMode, options: [.defaultToSpeaker, .allowBluetooth])
+            try audioSession.setCategory(
+                .playAndRecord, mode: sessionMode, options: [.defaultToSpeaker, .allowBluetooth])
 
             // Keep preferred settings
             try audioSession.setPreferredIOBufferDuration(Constants.ioBufferDuration)
@@ -1437,6 +1556,7 @@ private extension Data {
 extension Encodable {
     var dictionary: [String: Any]? {
         guard let data = try? JSONEncoder().encode(self) else { return nil }
-        return (try? JSONSerialization.jsonObject(with: data, options: .allowFragments)) as? [String: Any]
+        return (try? JSONSerialization.jsonObject(with: data, options: .allowFragments))
+            as? [String: Any]
     }
 }
